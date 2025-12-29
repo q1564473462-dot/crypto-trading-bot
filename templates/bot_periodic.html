@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Periodic {{ t.details }}{% endblock %}
+
+{% block css %}
+    <link href="{{ url_for('static', filename='css/bot_detail.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block chart_lib %}
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+{% endblock %}
+
+{% block js_vars %}
+    <script>
+        const CURRENT_BOT_ID = {{ bot_id }};
+    </script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="max-width: 1400px;">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card p-3 d-flex flex-row justify-content-between align-items-center shadow-sm">
+                <div class="d-flex align-items-center">
+                    {% if bot.mode == 'replay' %}
+                        <a href="/?mode=replay" id="back-to-dashboard" class="btn btn-outline-secondary btn-sm me-3">← {{ t.back }}</a>
+                    {% else %}
+                        <a href="/" id="back-to-dashboard" class="btn btn-outline-secondary btn-sm me-3">← {{ t.back }}</a>
+                    {% endif %}
+                    <div>
+                        <h4 class="m-0 fw-bold">
+                            <span id="bot-name-display">{{ t.loading }}</span>
+                            <span class="badge bg-light text-dark ms-2" style="font-size: 0.6em; vertical-align: middle;">📅 {{ t.periodic_investment }}</span>
+                            <span class="badge bg-secondary ms-1" id="symbol-display" style="font-size: 0.6em; vertical-align: middle;">...</span>
+                        </h4>
+                        <span id="status-msg" class="small text-muted">{{ t.connecting }}</span>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <h3 class="m-0 fw-bold text-warning" id="market-price">---</h3>
+                    <small class="text-muted">{{ t.market_price }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2 align-items-center">
+                        <span class="text-muted">{{ t.balance }}</span>
+                        <div class="d-flex align-items-center">
+                            <span id="balance" class="fw-bold fs-5 me-2">---</span>
+                            <button class="btn btn-sm btn-outline-success py-0 px-2" data-bs-toggle="modal" data-bs-target="#depositModal" title="{{ t.deposit_increase_capital }}">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">{{ t.realized_profit }}</span>
+                        <span id="daily-profit" class="fw-bold">---</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">{{ t.net_pnl }}</span>
+                        <span id="total-net-pnl" class="fw-bold">---</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">{{ t.total_fees }}</span>
+                        <span id="total-fees" class="fw-bold text-danger">---</span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <div id="live-controls" class="{% if bot.mode == 'replay' %}d-none{% endif %}">
+                            <button id="btn-start" class="btn btn-success w-100" onclick="toggleBot('start')">{{ t.start_bot }}</button>
+                            <button id="btn-stop" class="btn btn-danger w-100 d-none" onclick="toggleBot('stop')">{{ t.stop_bot }}</button>
+                        </div>
+
+                        <div id="replay-controls" class="{% if bot.mode != 'replay' %}d-none{% endif %}">
+                            <div class="mb-2">
+                                <label class="form-label small text-warning">{{ t.upload_history_csv }}</label>
+                                <input class="form-control form-control-sm bg-dark text-light" type="file" id="backtest-file" accept=".csv">
+                            </div>
+                            <button id="btn-run-backtest" class="btn btn-warning w-100 text-dark fw-bold" onclick="runBacktest()">
+                                {{ t.run_backtest }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-dark"><small>⚙️ {{ t.bot_params}}</small></div>
+                <div class="card-body">
+                    <form id="config-form">
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label">{{ t.pos_direction }}</label>
+                                <select class="form-select form-select-sm" id="cfg-direction">
+                                    <option value="long">{{ t.long }}</option>
+                                    <option value="short">{{ t.short }}</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">{{ t.leverage }} (Max 3x)</label>
+                                <input type="number" class="form-control form-control-sm" id="cfg-leverage" min="1" max="3" step="1" value="1">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <label class="form-label text-info">{{ t.periodic_interval_minute }}</label>
+                            <input type="number" step="1" class="form-control form-control-sm" id="cfg-interval" placeholder="60">
+                            <div class="form-text text-muted" style="font-size: 0.7rem;">{{ t.periodic_interval_desc }}</div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label text-warning">{{ t.invest_amount }}</label>
+                            <input type="number" step="1" class="form-control form-control-sm border-warning" id="cfg-amount" placeholder="10">
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">{{ t.price_limit_long }} / {{ t.price_limit_short }}</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="cfg-price-limit" placeholder="0 = No Limit">
+                            <div class="form-text text-muted" style="font-size: 0.7rem;">{{ t.price_limit_desc }}</div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">{{ t.amount_precision }}</label>
+                            <input type="number" step="0.00000001" class="form-control form-control-sm" id="cfg-amount-precision" placeholder="0.001">
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">{{ t.close_action }}</label>
+                            <select class="form-select form-select-sm" id="cfg-close-action">
+                                <option value="stop">{{ t.stop_bot }}</option>
+                                <option value="cooldown">🧊 {{ t.cooldown_1h }}</option>
+                                <option value="continue">▶️ {{ t.continue_running }}</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#rsiModal">
+                                {{ t.first_order_settings }}
+                            </button>
+                        </div>
+
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-2" onclick="saveConfig()">💾 {{ t.save }}</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card-body p-2">
+                <div class="input-group input-group-sm mb-2">
+                    <span class="input-group-text bg-dark border-secondary text-secondary">$</span>
+                    <input type="number" id="manual-amt" class="form-control bg-black text-light border-secondary" placeholder="{{ t.manual_buy_amount }} ($)">
+                    <button class="btn btn-outline-warning" onclick="manualBuy()">{{ t.manual_buy }}</button>
+                </div>
+                
+                <button class="btn btn-danger btn-sm w-100" onclick="manualClose()">{{ t.manual_close }}</button>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-dark py-2 d-flex justify-content-between align-items-center">
+                <small>📈 {{ t.kline_chart }}</small>
+                    <div class="d-flex align-items-center">
+                        <select id="timeframe-select" class="form-select form-select-sm w-auto bg-dark text-light border-secondary me-2" style="height: 24px; padding-top: 0; padding-bottom: 0; font-size: 0.8rem;">
+                            <option value="1m">{{ t.tf_1m }}</option>
+                            <option value="3m">{{ t.tf_3m }}</option>
+                            <option value="5m">{{ t.tf_5m }}</option>
+                            <option value="15m" selected>{{ t.tf_15 }}</option>
+                            <option value="1h">{{ t.tf_1h }}</option>
+                            <option value="4h">{{ t.tf_4h }}</option>
+                            <option value="1d">{{ t.tf_1d }}</option>
+                            <option value="1w">{{ t.tf_1w }}</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-light d-flex align-items-center justify-content-center" 
+                                style="height: 24px; width: 24px; padding: 0;" 
+                                onclick="fetchHistoryKline()" 
+                                title="{{ t.refresh }}">
+                            ↻
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="tv-chart-container" style="height: 350px;"></div>
+                </div>
+            </div>
+
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-4 border-end border-secondary border-opacity-25">
+                            <small class="text-muted d-block">{{ t.pos_avg }}</small>
+                            <span class="font-monospace text-primary fw-bold" id="val-avg">---</span>
+                        </div>
+                        <div class="col-4 border-end border-secondary border-opacity-25">
+                            <small class="text-muted d-block">{{ t.pos_amt }}</small>
+                            <span class="font-monospace text-light" id="val-amt">---</span>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">{{ t.pos_cost }}</small>
+                            <span class="font-monospace text-light" id="val-cost">---</span>
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center align-items-center">
+                        <div class="col-6">
+                            <small class="text-muted d-block">{{ t.floating_pnl }}</small>
+                            <span class="font-monospace fw-bold fs-4" id="pos-pnl">---</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">{{ t.next_invest_time }}</small>
+                            <span class="font-monospace text-info" id="next-time">---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+        
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header bg-dark p-0">
+                    <ul class="nav nav-tabs border-bottom-0" id="logTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active rounded-0 text-light py-2" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-pane" type="button">
+                                {{ t.history_tab }}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-0 text-secondary py-2" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs-pane" type="button">
+                                {{ t.logs_tab }}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body p-0 bg-black tab-content">
+                    <div class="tab-pane fade show active h-100" id="history-pane" role="tabpanel">
+                        <div id="rounds-container" class="log-box h-100 p-0" style="overflow-y: auto;">
+                            <div class="text-center text-muted mt-4">{{ t.loading }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade h-100" id="logs-pane" role="tabpanel">
+                        <div id="logs-container" class="log-box h-100 p-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "partials/bot_modals.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/bot_common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bot_periodic.js') }}"></script>
+{% endblock %}

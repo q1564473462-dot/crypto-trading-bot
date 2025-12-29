@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.settings_title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/settings.css') }}" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+    <script>const I18N = {{ t | tojson | safe }};</script>
+</head>
+<body class="p-4">
+    <div class="container" style="max-width: 1000px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+            <div class="d-flex align-items-center">
+                <h2 class="text-light m-0 me-3">{{ t.settings_title }}</h2>
+                <span class="badge bg-secondary">{{ t.user }}: {{ user.username }}</span>
+            </div>
+            <a href="/" class="btn btn-outline-secondary btn-sm">← {{ t.back }}</a>
+        </div>
+
+        <div class="card settings-card mb-4">
+            <div class="card-header bg-dark bg-gradient py-3">
+                <h5 class="m-0">🌐 {{ t.language_select }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <input type="hidden" id="selected-lang" value="{{ current_lang }}">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="lang-option p-3 text-center rounded border border-secondary {% if current_lang == 'zh-CN' %}active{% endif %}" onclick="selectOption('lang', 'zh-CN', this)">
+                            <div class="fs-1 mb-2">🇨🇳</div>
+                            <div class="fw-bold text-light">简体中文</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="lang-option p-3 text-center rounded border border-secondary {% if current_lang == 'zh-TW' %}active{% endif %}" onclick="selectOption('lang', 'zh-TW', this)">
+                            <div class="fs-1 mb-2">🇭🇰</div>
+                            <div class="fw-bold text-light">繁體中文</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="lang-option p-3 text-center rounded border border-secondary {% if current_lang == 'en' %}active{% endif %}" onclick="selectOption('lang', 'en', this)">
+                            <div class="fs-1 mb-2">🇺🇸</div>
+                            <div class="fw-bold text-light">English</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card settings-card mb-4">
+            <div class="card-header bg-dark bg-gradient py-3">
+                <h5 class="m-0">📊 {{ t.api_data_source }}</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted small mb-4">{{ t.api_source_desc }}</p>
+                <input type="hidden" id="selected-exchange" value="{{ user.exchange_source }}">
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="lang-option p-3 text-center rounded border border-secondary {% if user.exchange_source == 'binance' %}active{% endif %}" onclick="selectOption('exchange', 'binance', this)">
+                            <div class="fs-1 mb-2">🟡</div>
+                            <div class="fw-bold text-warning">Binance</div>
+                            <div class="small text-muted">Global / Futures</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="lang-option p-3 text-center rounded border border-secondary {% if user.exchange_source == 'pionex' %}active{% endif %}" onclick="selectOption('exchange', 'pionex', this)">
+                            <div class="fs-1 mb-2">🔵</div>
+                            <div class="fw-bold text-info">Pionex</div>
+                            <div class="small text-muted">Aggregated / Spot</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card settings-card mb-4">
+            <div class="card-header bg-dark bg-gradient py-3">
+                <h5 class="m-0" id="api-config-title">🔑 {{ t.api_config_title }}</h5>
+            </div>
+            <div class="card-body p-4">
+                
+                <input type="hidden" id="cache-key-binance" value="{{ user.binance_api_key or '' }}">
+                <input type="hidden" id="cache-secret-binance" value="{{ user.binance_api_secret or '' }}">
+                <input type="hidden" id="cache-key-pionex" value="{{ user.pionex_api_key or '' }}">
+                <input type="hidden" id="cache-secret-pionex" value="{{ user.pionex_api_secret or '' }}">
+
+                <p class="text-muted small mb-3">
+                    {{ t.api_key_desc }}
+                </p>
+                
+                <div class="mb-3">
+                    <label class="form-label text-light">{{ t.api_key_label }}</label>
+                    <input type="text" id="api-key" class="form-control bg-dark text-light border-secondary" 
+                           placeholder="{{ t.enter_api_key }}" value="{{ user.api_key or '' }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-light">{{ t.api_secret_label }}</label>
+                    <input type="password" id="api-secret" class="form-control bg-dark text-light border-secondary" 
+                           placeholder="{{ t.enter_api_secret }}" value="{{ user.api_secret or '' }}">
+                </div>
+                
+                <div class="alert alert-warning small">
+                    ⚠️ {{ t.security_warning }}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mb-5">
+            <button id="btn-save" onclick="saveAllSettings()" class="btn btn-primary px-5 py-2">
+                <span id="btn-text">💾 {{ t.save_settings }}</span>
+                <span id="btn-spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+        </div>
+    </div>
+</body>
+</html>

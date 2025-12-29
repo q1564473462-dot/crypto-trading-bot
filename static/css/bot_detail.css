@@ -1,0 +1,57 @@
+/* FVG_DCA_Pro/static/css/bot_detail.css */
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background-color: #121212; 
+}
+.card { 
+    border: 1px solid #333; 
+    background-color: #1e1e1e; 
+    margin-bottom: 20px; 
+}
+.text-success-bright { color: #00e676; }
+.text-danger-bright { color: #ff5252; }
+.table-sm td, .table-sm th { 
+    font-size: 0.85em; 
+    vertical-align: middle; 
+}
+.log-box { 
+    height: 300px; 
+    overflow-y: auto; 
+    font-family: monospace; 
+    font-size: 0.8em; 
+    background: #000; 
+    color: #0f0; 
+    padding: 10px; 
+    border-radius: 5px; 
+}
+.form-label { 
+    font-size: 0.85rem; 
+    color: #aaa; 
+    margin-bottom: 2px;
+}
+.input-group-text { 
+    font-size: 0.85rem; 
+    padding: 0.25rem 0.5rem; 
+}
+
+/* Accordion 自定义样式 - 仿 APP 风格 */
+.accordion-button::after {
+    filter: invert(1); /* 让箭头变白 */
+    transform: scale(0.7);
+}
+.accordion-button:not(.collapsed) {
+    background-color: rgba(255, 255, 255, 0.05);
+    box-shadow: none;
+}
+.nav-tabs .nav-link.active {
+    background-color: transparent;
+    border-bottom: 2px solid #0d6efd;
+    color: #fff !important;
+}
+.nav-tabs .nav-link {
+    border: none;
+}
+.nav-tabs .nav-link:hover {
+    border: none;
+    color: #ccc;
+}

@@ -1,0 +1,314 @@
+<style>
+    /* =========================================
+       弹窗统一化样式 (Modal Unification) 
+       ========================================= */
+
+    /* 1. 统一的模块容器卡片 */
+    /* 让 RSI、硬性指标、MA 长得一样 */
+    .settings-section {
+        background-color: rgba(0, 0, 0, 0.2); /* 统一半透明黑底 */
+        border: 1px solid rgba(255, 255, 255, 0.1); /* 统一微弱边框 */
+        border-radius: 6px;
+        padding: 15px; /* 统一内边距 */
+        margin-bottom: 15px;
+    }
+
+    /* 2. 统一的小标题 */
+    .section-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* 3. 迷你控件 (用于 MA 设置行) */
+    /* 替代 style="width: 60px; height: 24px..." */
+    .form-control-mini {
+        height: 26px;
+        font-size: 0.75rem;
+        padding: 0 6px;
+        background-color: #212529; /* bg-dark */
+        color: #e0e0e0;
+        border: 1px solid #495057;
+    }
+    .form-control-mini:focus {
+        background-color: #2b3035;
+        color: #fff;
+        border-color: #0d6efd;
+        box-shadow: none;
+    }
+    /* 几个固定宽度，保证对齐 */
+    .w-mini-tf { width: 70px; }   /* 周期选择框宽度 */
+    .w-mini-num { width: 60px; }  /* 数字输入框宽度 */
+    .w-mini-type { width: 70px; } /* 类型选择框宽度 */
+
+    /* 4. RSI Tab 按钮美化 */
+    .rsi-tab-btn {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #adb5bd;
+        font-size: 0.8rem;
+        padding: 5px 10px;
+        transition: all 0.2s;
+    }
+    .rsi-tab-btn:hover {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    .rsi-tab-btn.active {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #fff !important;
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    /* 做多激活绿 */
+    .rsi-tab-btn.long-tab.active {
+        border-color: #198754;
+        background-color: rgba(25, 135, 84, 0.2);
+        color: #75b798 !important;
+    }
+    /* 做空激活红 */
+    .rsi-tab-btn.short-tab.active {
+        border-color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #ea868f !important;
+    }
+</style>
+
+<div class="modal fade" id="depositModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered"> 
+        <div class="modal-content bg-dark border-secondary text-light">
+            <div class="modal-header border-secondary py-3">
+                <h6 class="modal-title">💰 {{ t.deposit_increase_capital }}</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-info bg-opacity-10 border-info mb-4" role="alert">
+                    <div class="d-flex">
+                        <div class="me-3 fs-1">🛡️</div>
+                        <div>
+                            <h6 class="alert-heading fw-bold mb-1" style="font-size: 0.9rem;">{{ t.deposit_security_title }}</h6>
+                            <p class="mb-0 small text-muted" style="line-height: 1.5; font-size: 0.8rem;">
+                                {{ t.deposit_security_hint | safe }}
+                                {{ t.deposit_instructions | safe }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-light fw-bold small">{{ t.deposit_amount }}</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-dark border-secondary text-secondary">$</span>
+                        <input type="number" class="form-control bg-black text-light border-secondary fw-bold" 
+                               id="deposit-amount" value="1000" style="font-size: 1.1rem;">
+                        <span class="input-group-text bg-dark border-secondary text-secondary">USDT</span>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn btn-success w-100 py-2 fw-bold" onclick="executeDeposit()">
+                    {{ t.confirm }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="rsiModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-secondary text-light">
+            
+            <div class="modal-header border-secondary py-3">
+                <h6 class="modal-title fw-bold">
+                    <span class="me-2">📉</span>{{ t.first_order_conditions }}
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                
+                <div class="alert alert-secondary bg-opacity-10 border-0 py-2 mb-4 small text-muted d-flex align-items-center">
+                    <i class="bi bi-info-circle me-2"></i> 
+                    <span>{{ t.rsi_help }}</span>
+                </div>
+
+                <div class="settings-section">
+                    <div class="section-title text-warning">
+                        {{ t.rsi_conditions_title }}
+                    </div>
+
+                    <ul class="nav nav-pills nav-fill mb-3 gap-2" id="rsiTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rsi-tab-btn long-tab active" 
+                                    id="rsi-long-tab" data-bs-toggle="pill" data-bs-target="#rsi-long-pane" type="button">
+                                🟢 {{ t.long }}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rsi-tab-btn short-tab" 
+                                    id="rsi-short-tab" data-bs-toggle="pill" data-bs-target="#rsi-short-pane" type="button">
+                                🔴 {{ t.short }}
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="rsi-long-pane">
+                            <div class="table-responsive border border-secondary border-opacity-25 rounded mb-2">
+                                <table class="table table-sm table-dark table-borderless align-middle mb-0">
+                                    <thead class="bg-black bg-opacity-25">
+                                        <tr class="text-secondary small border-bottom border-secondary border-opacity-25">
+                                            <th class="ps-3">{{ t.timeframe }}</th>
+                                            <th>{{ t.operator }}</th>
+                                            <th>{{ t.threshold }}</th>
+                                            <th class="text-center">{{ t.active }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rsi-table-body-long"></tbody>
+                                </table>
+                            </div>
+                            <div class="text-center text-muted small mb-2" id="empty-msg-long" style="display:none;">暂无条件</div>
+                            <button class="btn btn-sm btn-outline-success w-100 border-opacity-25" onclick="addRsiRow('long')">
+                                {{ t.add_condition }}
+                            </button>
+                        </div>
+
+                        <div class="tab-pane fade" id="rsi-short-pane">
+                            <div class="table-responsive border border-secondary border-opacity-25 rounded mb-2">
+                                <table class="table table-sm table-dark table-borderless align-middle mb-0">
+                                    <thead class="bg-black bg-opacity-25">
+                                        <tr class="text-secondary small border-bottom border-secondary border-opacity-25">
+                                            <th class="ps-3">{{ t.timeframe }}</th>
+                                            <th>{{ t.operator }}</th>
+                                            <th>{{ t.threshold }}</th>
+                                            <th class="text-center">{{ t.active }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rsi-table-body-short"></tbody>
+                                </table>
+                            </div>
+                            <div class="text-center text-muted small mb-2" id="empty-msg-short" style="display:none;">暂无条件</div>
+                            <button class="btn btn-sm btn-outline-danger w-100 border-opacity-25" onclick="addRsiRow('short')">
+                                {{ t.add_condition }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <div class="section-title text-light opacity-75">
+                        {{ t.hard_filters_title }}
+                    </div>
+                    
+                    <div class="d-flex flex-column gap-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="rsi_filter_stoch">
+                            <label class="form-check-label small text-muted" for="rsi_filter_stoch">
+                                {{ t.enable_stoch_filter }}
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="rsi_filter_bb">
+                            <label class="form-check-label small text-muted" for="rsi_filter_bb">
+                                {{ t.enable_bb_filter }}
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="rsi_filter_adx">
+                            <label class="form-check-label small text-muted" for="rsi_filter_adx">
+                                {{ t.enable_adx_filter }}
+                            </label>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="rsi_filter_vol">
+                            <label class="form-check-label small text-muted" for="rsi_filter_vol">
+                                {{ t.enable_vol_filter }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section mb-0">
+                    <div class="section-title text-info">
+                        {{ t.ma_trend_filter }}
+                        <small class="fw-normal text-muted ms-2" style="font-size: 0.7em;">{{ t.ma_help }}</small>
+                    </div>
+                    
+                    <ul class="nav nav-pills nav-fill mb-2 gap-2" id="maTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rsi-tab-btn long-tab active py-1" 
+                                    id="ma-long-tab" data-bs-toggle="pill" data-bs-target="#ma-long-pane" type="button">
+                                🟢 {{ t.long }}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rsi-tab-btn short-tab py-1" 
+                                    id="ma-short-tab" data-bs-toggle="pill" data-bs-target="#ma-short-pane" type="button">
+                                🔴 {{ t.short }}
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="ma-long-pane">
+                            <div class="table-responsive border border-secondary border-opacity-25 rounded mb-2">
+                                <table class="table table-sm table-dark table-borderless align-middle mb-0">
+                                    <thead class="bg-black bg-opacity-25">
+                                        <tr class="text-secondary small border-bottom border-secondary border-opacity-25">
+                                            <th class="ps-3">{{ t.timeframe }}</th>
+                                            <th>{{ t.ma_period }}</th>
+                                            <th>{{ t.ma_type }}</th>
+                                            <th class="text-center">{{ t.active }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ma-table-body-long"></tbody>
+                                </table>
+                            </div>
+                            <button class="btn btn-sm btn-outline-success w-100 border-opacity-25" onclick="commonAddMaRow('long')">
+                                {{ t.add_condition }}
+                            </button>
+                        </div>
+
+                        <div class="tab-pane fade" id="ma-short-pane">
+                            <div class="table-responsive border border-secondary border-opacity-25 rounded mb-2">
+                                <table class="table table-sm table-dark table-borderless align-middle mb-0">
+                                    <thead class="bg-black bg-opacity-25">
+                                        <tr class="text-secondary small border-bottom border-secondary border-opacity-25">
+                                            <th class="ps-3">{{ t.timeframe }}</th>
+                                            <th>{{ t.ma_period }}</th>
+                                            <th>{{ t.ma_type }}</th>
+                                            <th class="text-center">{{ t.active }}</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ma-table-body-short"></tbody>
+                                </table>
+                            </div>
+                            <button class="btn btn-sm btn-outline-danger w-100 border-opacity-25" onclick="commonAddMaRow('short')">
+                                {{ t.add_condition }}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="p-2 mt-3 border border-secondary border-opacity-25 rounded bg-black bg-opacity-25 text-muted" style="font-size: 0.7rem; line-height: 1.4;">
+                         <div class="d-flex align-items-start mb-1">
+                            <span class="me-1">ℹ️</span>
+                            <span>{{ t.ma_help }}</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="modal-footer border-secondary py-2">
+                <button type="button" class="btn btn-primary px-4 fw-bold" data-bs-dismiss="modal">{{ t.confirm }}</button>
+            </div>
+        </div>
+    </div>
+</div>

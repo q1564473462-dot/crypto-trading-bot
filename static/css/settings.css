@@ -1,0 +1,48 @@
+body {
+    background-color: #121212;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #e0e0e0;
+}
+
+/* 卡片样式统一 */
+.settings-card {
+    background-color: #1e1e1e;
+    border: 1px solid #333;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.card-header {
+    border-bottom: 1px solid #333;
+}
+
+/* 语言选择卡片样式 */
+.lang-option {
+    background-color: #121212; /* 比卡片背景更深一点 */
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    border: 1px solid #444 !important;
+}
+
+.lang-option:hover {
+    background-color: #2a2a2a;
+    border-color: #666 !important;
+    transform: translateY(-2px);
+}
+
+/* 选中状态：使用 Bootstrap Primary 蓝色边框和微光 */
+.lang-option.active {
+    border-color: #0d6efd !important;
+    background-color: rgba(13, 110, 253, 0.1);
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.2);
+}
+
+/* 选中状态下的文字高亮 */
+.lang-option.active .text-muted {
+    color: #a0cfff !important;
+}
+
+/* 按钮微调 */
+.btn-primary {
+    font-weight: 600;
+}

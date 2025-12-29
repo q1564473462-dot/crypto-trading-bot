@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ t.admin_dashboard }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #121212; color: #e0e0e0; }
+        .card { background-color: #1e1e1e; border: 1px solid #333; }
+        .table { color: #e0e0e0; }
+        /* [修改点] 强制搜索按钮不换行 */
+        .btn-search { white-space: nowrap; }
+    </style>
+    <script>
+    // 将后端的翻译字典转为 JS 对象，供 JS 脚本使用
+    const I18N = {{ t | tojson | safe }};
+    </script>
+</head>
+<body class="p-4">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+            <div class="d-flex align-items-center">
+                <h2 class="text-warning m-0 me-3">🛡️ {{ t.admin_dashboard }}</h2>
+                <span class="badge bg-secondary">Admin: {{ current_user.username }}</span>
+            </div>
+            <div>
+                <a href="/" class="btn btn-outline-light me-2">🏠 {{ t.back }}</a>
+                <a href="/logout" class="btn btn-outline-danger btn-sm">{{ t.logout }}</a>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" action="/admin" class="d-flex gap-2">
+                    <input type="text" name="q" class="form-control bg-dark text-light border-secondary" 
+                           placeholder="{{ t.search}}{{ t.username}}..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary btn-search text-nowrap">🔍 {{ t.search }}</button>
+                    {% if search_query %}
+                    <a href="/admin" class="btn btn-secondary text-nowrap">{{ t.reset }}</a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-dark bg-gradient">{{ t.user }}{{ t.management }} ({{ t.together }} {{ users|length }} {{ t.people }})</div>
+            <div class="card-body p-0">
+                <table class="table table-hover table-dark mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>{{ t.username }}</th>
+                            <th>{{ t.role }}</th>
+                            <th>{{ t.registration_time }}</th>
+                            <th class="text-center">{{ t.bot_count }}</th>
+                            <th class="text-center">{{ t.total_profit_estimate }}</th>
+                            <th class="text-end">{{ t.actions }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>#{{ u.id }}</td>
+                            <td class="fw-bold text-info">{{ u.username }}</td>
+                            <td>
+                                {% if u.is_admin %}
+                                <span class="badge bg-danger">{{ t.admin }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ t.user }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">{{ u.created_at }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-primary rounded-pill">{{ u.bot_count }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="{{ 'text-success' if u.total_profit >= 0 else 'text-danger' }}">
+                                    ${{ u.total_profit|default(0)|round(2) }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="/admin/user/{{ u.id }}" class="btn btn-sm btn-outline-info text-nowrap">
+                                    👁️ {{ t.view_users }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">{{ t.no_users_found }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

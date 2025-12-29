@@ -1,0 +1,138 @@
+<div class="modal fade" id="addBotModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light border border-secondary">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title">✨ {{ t.add_bot }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">{{ t.bot_name }}</label>
+                        <input type="text" class="form-control bg-black text-light border-secondary" id="newName"
+                            placeholder="{{ t.give_your_bot_a_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">{{ t.symbol }}</label>
+                        <input type="text" class="form-control bg-black text-light border-secondary" 
+                            id="newSymbol" list="symbolOptions" 
+                            placeholder="{{ t.search_symbol_placeholder }}" autocomplete="off" required>
+                        <datalist id="symbolOptions"></datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">{{ t.market_type }}</label>
+                        <select class="form-select bg-black text-light border-secondary" id="newMarketType">
+                            <option value="future" selected>Futures ({{ t.future }})</option>
+                            <option value="spot">Spot ({{ t.spot }})</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">{{ t.bot }}</label>
+                        <select class="form-select bg-black text-light border-secondary" id="newStrategyType">
+                            <option value="fvg">📈 {{ t.fvg_martingale }}</option>
+                            <option value="grid_dca">🔢 {{ t.auto_grid }}</option>
+                            <option value="coffin">⚰️ {{ t.coffin }}</option>
+                            <option value="periodic">📅 {{ t.periodic_investment }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">{{ t.capital }}</label>
+                        <input type="number" class="form-control bg-black text-light border-secondary"
+                            id="newCapital" value="1000" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t.cancel }}</button>
+                <button type="button" class="btn btn-primary" onclick="createBot()">{{ t.confirm }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createFolderModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light border border-secondary">
+            <div class="modal-header border-bottom border-secondary">
+                <h5 class="modal-title">📁 {{ t.create_folder }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ t.folder_name }}</label>
+                    <input type="text" class="form-control bg-black text-light border-secondary" id="newFolderName">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ t.select_bots }}</label>
+                    <div id="folder-bot-selection" class="border border-secondary rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                        </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary">
+                <button type="button" class="btn btn-primary" onclick="createFolder()">{{ t.create }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="downloadDataModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">{{ t.download_modal_title }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="download-form">
+                    <div class="mb-3">
+                        <label class="form-label">{{ t.symbol }}</label>
+                        <input type="text" class="form-control bg-black text-light border-secondary" 
+                               id="dl-symbol" list="symbolOptions" 
+                               value="BTC/USDT" placeholder="{{ t.search_symbol_placeholder }}" autocomplete="off">
+                        </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">{{ t.market_type }}</label>
+                        <select class="form-select bg-black text-light border-secondary" id="dl-market-type">
+                            <option value="spot" selected>{{ t.spot }}</option>
+                            <option value="future">{{ t.future }}</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ t.timeframe }}</label>
+                        <select class="form-select bg-black text-light border-secondary" id="dl-tf">
+                            <option value="1m">{{ t.tf_1m }}</option>
+                            <option value="5m">{{ t.tf_5m }}</option>
+                            <option value="15m" selected>{{ t.tf_15 }}</option>
+                            <option value="1h">{{ t.tf_1h }}</option>
+                            <option value="4h">{{ t.tf_4h }}</option>
+                        </select>
+                        <div class="form-text text-warning mt-1 small">
+                            {{ t.coffin_warning }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">{{ t.start_date }}</label>
+                            <input type="date" class="form-control bg-black text-light border-secondary" id="dl-start">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">{{ t.end_date }}</label>
+                            <input type="date" class="form-control bg-black text-light border-secondary" id="dl-end">
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info small py-2">
+                        {{ t.download_tip }}
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-primary w-100" onclick="startDownload()">
+                    {{ t.start_download_btn }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
